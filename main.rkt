@@ -14,16 +14,6 @@
 ; delete from relation where (u v)
 
 #|
-(define (create-relation fs)
-    (define fields
-	(for/hash ((i (in-range 0 (length fs))) (f (in-list fs)))
-	    (values f i)))
-    (λ (cmd . args)
-	(case cmd
-	    ('create ())
-	    ('read   ())
-	    ('update ())
-	    ('delete ()))))
 
 (define (create-datastore (init #f))
     (define (build-store (rs #f) (is #f))
@@ -45,45 +35,6 @@
 	(build-store (init 'relations) (init 'indexes))
 	(build-store)))
 
-(world 'display)
-
-(define world2
-    (world 'add_relation
-	'brawlers
-	'(id name brawn brains moves cool karma)))
-
-(world2 'display)
-
-(define world3
-    (world 'add_tuples
-	'brawlers
-	(list 1 "Jack Damage" 20 0 2 10 100)
-	(list 2 "Dark Okie" 18 3 14 7 100)
-	(list 3 "Grey Hound" 10 0 17 0 100)
-	(list 4 "Billy Gunn" 0 3 4 0 100)
-	(list 5 "Doctor Braino" 0 10 0 10 100)))
-
-(world3 'display)
-
-(define world4
-    (world 'update
-	'brawlers
-	'((brawn 21) (brains 1))
-	'((id 1))))
-
-(world4 'display)
-
-(define brawlers
-    (world 'get_relation 'brawlers))
-
-(brawlers 'display)
-
-(define jack
-    (brawlers 'get_tuple '(('id 1))))
-
-(jack 'display)
-
-(define new-world (create-datastore (ds init)))
 |#
 
 (define (list->fector lst)
