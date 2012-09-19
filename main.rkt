@@ -2,42 +2,40 @@
 
 (require (planet dvanhorn/fector:1:1))
 
-;(provide create-datastore)
-
-; create datastore
-; create relation name (fields)
-; delete relation
-; create tuples ((x y z)(p d q))
-; read (x y) from relation where (u v)
-; update (x y) in relation where (u v)
-; delete from relation where (u v)
+(provide create-datastore)
 
 
 (define (create-datastore (rs #f) (is #f))
     (define relations (or rs (hash)))
     (define indexes (or is (hash)))
+    (define (unroll-relations)
+	(make-immutable-hash
+	    (map (λ (k) (cons k ((hash-ref relations k))))
+		 (hash-keys relations))))
     (define (serialize)
-	(hash 'relations relations 'indexes indexes))
+	(hash
+	    'relations (unroll-relations)
+	    'indexes indexes))
     (define (relvar name)
 	(hash-ref relations name))
-    (define (rebuild name fn)
+    (define (rebuild name noob)
 	(create-datastore
-	    (hash-set relations name (fn) indexes)))
-    (define (add-relation name fields (tuples #f))
-	(rebuild name (λ () (relation name fields tuples))))
+	    (hash-set relations name noob) indexes))
+    (define (add-relation name fields (tuples empty))
+	(rebuild name (relation name fields tuples)))
     (define (add-tuples relname tupz)
-	(rebuild relname (λ () ((relvar relname) 'create tupz))))
+	(rebuild relname ((relvar relname) 'create tupz)))
     (define (rm-tuples relname where)
-	(rebuild relname (λ () ((relvar relname) 'delete where))))
+	(rebuild relname ((relvar relname) 'delete where)))
     (define (update-tuples relname where put)
-	(rebuild relname (λ () ((relvar relname) 'update where put))))
+	(rebuild relname ((relvar relname) 'update where put)))
     (define (query result-type relname where want)
-	(rebuild relname (λ () ((relvar relname) result-type where want))))
+	((relvar relname) result-type where want))
     (case-lambda
 	(() (serialize))
 	((cmd)
 	    (case cmd
-		('relations relations)
+		('relations (unroll-relations))
 		('indexes indexes)))
 	((cmd x)
 	    (case cmd
@@ -50,7 +48,7 @@
 	((cmd x y z)
 	    (case cmd
 		('add_relation (add-relation x y z))
-		('(read read-row read-col read-val) (query cmd x y z))
+		((read read-row read-col read-val) (query cmd x y z))
 		('update (update-tuples x y z))))))
 
 (define (list->fector lst)
