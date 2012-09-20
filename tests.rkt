@@ -10,9 +10,7 @@
 (define bfields '(id name brawn brains moves cool karma))
 
 (define world2
-    (world 'add_relation
-	'brawlers
-	bfields))
+    (world 'add_relation 'brawlers bfields))
 
 (world2)
 
@@ -66,4 +64,47 @@
 (world6 'relations)
 
 (world6 'indexes)
+
+(define nfields '(x y z i j k m n q))
+
+(define w7 (world6 'add_relation 'numbers nfields))
+
+(w7)
+
+(current-memory-use)
+
+(define (rand09 (x #f)) (random 10))
+(define (rando xs) (map rand09 xs))
+
+(define w8
+    (let ((tuples (for/list ((i (in-range 0 12000))) (rando nfields))))
+	(w7 'create 'numbers tuples)))
+
+(current-memory-use)
+
+(define (rand-update)
+    (define (rand-fs)
+	(take (shuffle nfields) 3))
+    (define (rand-vs)
+	(map rand09 '(1 1 1)))
+    (define (rander)
+	(map list (rand-fs) (rand-vs)))
+    (define where (rander))
+    (define put (rander))
+    (cons where put))
+
+(define upgrayydz
+    (for/list ((i (in-range 0 1e3)))
+	(rand-update)))
+
+(time
+    (for/fold ((relvar w8)) ((upg (in-list upgrayydz)))
+	(relvar 'update 'numbers (car upg) (cdr upg))))
+
+(current-memory-use)
+
+(read)
+
+
+
 

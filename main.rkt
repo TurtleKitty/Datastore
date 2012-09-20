@@ -4,10 +4,16 @@
 
 (provide create-datastore)
 
+(define (wrong type wanted)
+    (λ (cmd)
+	(raise-argument-error type wanted cmd)))
 
 (define (create-datastore (rs #f) (is #f))
     (define relations (or rs (hash)))
     (define indexes (or is (hash)))
+    (define wtf
+	(wrong 'datastore
+	    "relations indexes get_relation add_relation create read read-row read-col read-val update delete"))
     (define (unroll-relations)
 	(make-immutable-hash
 	    (map (λ (k) (cons k ((hash-ref relations k))))
@@ -36,20 +42,24 @@
 	((cmd)
 	    (case cmd
 		('relations (unroll-relations))
-		('indexes indexes)))
+		('indexes indexes)
+		(else (wtf cmd))))
 	((cmd x)
 	    (case cmd
-		('get_relation (hash-ref relations x))))
+		('get_relation (hash-ref relations x))
+		(else (wtf cmd))))
 	((cmd x y)
 	    (case cmd
 		('add_relation (add-relation x y))
 		('create (add-tuples x y))
-		('delete (rm-tuples x y))))
+		('delete (rm-tuples x y))
+		(else (wtf cmd))))
 	((cmd x y z)
 	    (case cmd
 		('add_relation (add-relation x y z))
 		((read read-row read-col read-val) (query cmd x y z))
-		('update (update-tuples x y z))))))
+		('update (update-tuples x y z))
+		(else (wtf cmd))))))
 
 (define (list->fector lst)
     (apply fector lst))
@@ -90,6 +100,9 @@
 (define (relation name fields (tuples empty))
     (define lookup (make-lookup fields))
     (define (convert lss) (map list->fector lss))
+    (define wtf
+	(wrong name
+	    "name fields create read read-row read-col read-val update delete"))
     (define (get t f)
 	(fector-ref t (lookup f)))
     (define (wrapper fv) (tuple lookup fv))
@@ -148,17 +161,20 @@
 	    ((cmd)
 		(case cmd
 		    ('name name)
-		    ('fields fields)))
+		    ('fields fields)
+		    (else (wtf cmd))))
 	    ((cmd args)
 		(case cmd
 		    ('create (create args))
-		    ('delete (delete args))))
+		    ('delete (delete args))
+		    (else (wtf cmd))))
 	    ((cmd where xs)
 		(case cmd
 		    ('read (read where xs))
 		    ('read-row (read-row where xs))
 		    ('read-col (read-col where xs))
 		    ('read-val (read-val where xs))
-		    ('update (update where xs))))))
+		    ('update (update where xs))
+		    (else (wtf cmd))))))
     (mk-relation (convert tuples)))
 
